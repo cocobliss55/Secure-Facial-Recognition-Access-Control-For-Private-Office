@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Employee - Facial Recognition Access Control{% endblock %}
+
+{% block content %}
+<div class="add-employee-container">
+    <h2>Edit Employee</h2>
+    
+    <form id="editEmployeeForm" method="POST" action="{{ url_for('update_employee', employee_id=employee.id) }}">
+        <div class="form-group">
+            <label for="employee_id">Employee ID</label>
+            <input type="text" id="employee_id" value="{{ employee.id }}" disabled>
+            <small class="form-hint">Employee ID cannot be changed</small>
+        </div>
+        <div class="form-group">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" value="{{ employee.name }}" required>
+        </div>
+        <div class="form-group">
+            <label for="status">Status</label>
+            <select id="status" name="status">
+                <option value="Active" {% if employee.status == 'Active' %}selected{% endif %}>Active</option>
+                <option value="Inactive" {% if employee.status == 'Inactive' %}selected{% endif %}>Inactive</option>
+            </select>
+        </div>
+        <div class="form-buttons">
+            <button type="submit" class="submit-btn">Update Employee</button>
+            <a href="{{ url_for('employee') }}" class="cancel-btn">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Facial Recognition Access Control{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <h1>Facial Recognition Access Control Dashboard</h1>
+    
+    <div class="stats">
+        <div class="stat-card">
+            <h3>Total Employees</h3>
+            <p class="stat-value">{{ employees|length }}</p>
+        </div>
+        
+        <div class="stat-card">
+            <h3>Active Employees</h3>
+            <p class="stat-value">{{ active_employees }}</p>
+        </div>
+        
+        <div class="stat-card">
+            <h3>Access Granted Today</h3>
+            <p class="stat-value">{{ access_granted }}</p>
+        </div>
+        
+        <div class="stat-card">
+            <h3>Access Denied Today</h3>
+            <p class="stat-value">{{ access_denied }}</p>
+        </div>
+    </div>
+    
+    <div class="actions">
+        <a href="{{ url_for('recognition') }}" class="action-button">
+            <span>Open Face Recognition</span>
+        </a>
+    </div>
+</div>
+{% endblock %}

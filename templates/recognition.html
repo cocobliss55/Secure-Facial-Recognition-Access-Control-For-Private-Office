@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+
+{% block title %}Face Recognition - Access Control{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Additional styles for face recognition */
+    .face-guide {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 200px;
+        height: 250px;
+        border: 3px dashed rgba(255, 255, 255, 0.5);
+        border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+        pointer-events: none;
+        z-index: 10;
+        display: block;
+    }
+    
+    .processing-indicator {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        display: none;
+        z-index: 15;
+    }
+    
+    .error-message {
+        color: #e74c3c;
+        font-weight: bold;
+        margin-top: 10px;
+        text-align: center;
+        background-color: rgba(231, 76, 60, 0.1);
+        padding: 10px;
+        border-radius: 5px;
+        display: none;
+    }
+    
+    .confidence-bar-container {
+        width: 100%;
+        background-color: #eee;
+        border-radius: 5px;
+        margin-top: 10px;
+        height: 20px;
+        overflow: hidden;
+    }
+    
+    .confidence-bar {
+        height: 100%;
+        background-color: #3498db;
+        width: 0%;
+        transition: width 0.5s ease-in-out;
+        position: relative;
+    }
+    
+    .confidence-bar span {
+        position: absolute;
+        right: 5px;
+        color: white;
+        font-weight: bold;
+        font-size: 12px;
+        line-height: 20px;
+    }
+
+    /* Additional styles for the recognition page */
+    .recognition-container {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+    
+    .back-button {
+        background-color: #555;
+        color: white;
+        padding: 8px 15px;
+        border-radius: 4px;
+        text-decoration: none;
+    }
+    
+    .recognition-area {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .video-container {
+        width: 640px;
+        height: 480px;
+        background-color: #000;
+        position: relative;
+        margin-bottom: 20px;
+        overflow: hidden;
+        border: 2px solid #ddd;
+        border-radius: 4px;
+    }
+    
+    .match-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        text-align: center;
+        padding: 10px;
+        pointer-events: none;
+    }
+    
+    .match-text {
+        display: inline-block;
+        background-color: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 8px 15px;
+        border-radius: 4px;
+        font-weight: bold;
+    }
+    
+    .match-text.match {
+        background-color: rgba(46, 204, 113, 0.8);
+    }
+    
+    .match-text.no-match {
+        background-color: rgba(231, 76, 60, 0.8);
+    }
+    
+    .recognition-info {
+        background-color: #f9f9f9;
+        padding: 20px;
+        border-radius: 4px;
+        width: 100%;
+        max-width: 640px;
+        margin-top: 10px;
+    }
+    
+    .control-button {
+        background-color: #e74c3c;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        margin-top: 15px;
+    }
+    
+    .control-button:hover {
+        background-color: #c0392b;
+    }
+    
+    /* Progress bar styles */
+    .scanning-progress-container {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 6px;
+        background-color: rgba(0, 0, 0, 0.3);
+        z-index: 20;
+        display: none;
+    }
+    
+    .scanning-progress-bar {
+        height: 100%;
+        width: 0%;
+        background-color: #27ae60;
+        transition: width 0.1s linear;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="recognition-area">
+    <div class="video-container">
+        <video id="video" autoplay playsinline></video>
+        <canvas id="canvas" style="display: none;"></canvas>
+        <div id="face-guide" class="face-guide"></div>
+        <div id="processing-indicator" class="processing-indicator">Processing...</div>
+        <div id="match-overlay" class="match-overlay">
+            <div class="match-text" id="match-text">READY</div>
+        </div>
+        <div id="scanning-progress-container" class="scanning-progress-container">
+            <div id="scanning-progress-bar" class="scanning-progress-bar"></div>
+        </div>
+    </div>
+    
+    <div id="error-message" class="error-message"></div>
+    
+    <div class="recognition-info">
+        <h3>Recognition Status</h3>
+        <p id="recognitionStatus">Starting camera...</p>
+        <p id="recognizedName"></p>
+        
+        <div id="confidence-container" style="display: none;">
+            <p>Confidence:</p>
+            <div class="confidence-bar-container">
+                <div class="confidence-bar" id="confidenceBar">
+                    <span id="confidenceValue">0%</span>
+                </div>
+            </div>
+        </div>
+        
+        <button id="toggleBtn" class="control-button">Stop Recognition</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/recognition.js') }}"></script>
+{% endblock %}

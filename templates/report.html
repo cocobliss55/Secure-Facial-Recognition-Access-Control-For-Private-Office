@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block title %}Report Details - Facial Recognition Access Control{% endblock %}
+
+{% block content %}
+<style>
+    th[onclick] {
+        cursor: pointer;
+        user-select: none;
+        position: relative;
+    }
+    
+    th[onclick]:hover {
+        background-color: #eaeaea;
+    }
+    
+    .sort-icon {
+        margin-left: 5px;
+        font-size: 12px;
+        color: #555;
+    }
+
+    .clear-btn {
+        background-color: #e74c3c !important;
+        color: white !important;
+    }
+
+    .clear-btn:hover {
+        background-color: #c0392b !important;
+    }
+</style>
+
+<div class="search-container">
+    <input type="text" id="searchInput" placeholder="Search" onkeyup="searchTable()">
+</div>
+
+<div class="action-buttons">
+    <div class="filter-buttons">
+        <button id="filterAll" class="filter-btn active" onclick="filterRecords('all')">All</button>
+        <button id="filterGranted" class="filter-btn" onclick="filterRecords('Granted')">Granted</button>
+        <button id="filterDenied" class="filter-btn" onclick="filterRecords('Denied')">Denied</button>
+    </div>
+    
+    <button class="clear-btn" onclick="showClearModal()">Clear All Records</button>
+</div>
+
+<div class="table-container">
+    <table id="reportTable">
+        <thead>
+            <tr>
+                <th onclick="sortTableByDate()">Date & Time <span id="dateSort" class="sort-icon">▼</span></th>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Status</th>
+                <th>Access Granted/Denied</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in records %}
+            <tr class="record-row" data-access="{{ record.access }}">
+                <td>{{ record.timestamp }}</td>
+                <td>{{ record.id }}</td>
+                <td>{{ record.name }}</td>
+                <td>{{ record.status }}</td>
+                <td>{{ record.access }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Clear Confirmation Modal -->
+<div id="clearModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="hideClearModal()">&times;</span>
+        <h3>Confirm Clear Records</h3>
+        <p>Are you sure you want to clear all access records? This action cannot be undone.</p>
+        <div class="modal-buttons">
+            <form id="clearForm" method="POST" action="{{ url_for('clear_records') }}">
+                <button type="submit" class="submit-btn delete-confirm-btn">Clear All</button>
+                <button type="button" class="cancel-btn" onclick="hideClearModal()">Cancel</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Track the sorting direction of the date column
+    let dateSortDirection = 'desc'; // Start with newest first (descending)
+    
+    // Sort the table by date
+    function sortTableByDate() {
+        var table = document.getElementById("reportTable");
+        var rows = Array.from(table.querySelectorAll("tbody tr"));
+        var sortIcon = document.getElementById("dateSort");
+        
+        // Toggle sort direction
+        dateSortDirection = dateSortDirection === 'desc' ? 'asc' : 'desc';
+        
+        // Update sort icon
+        sortIcon.textContent = dateSortDirection === 'desc' ? '▼' : '▲';
+        
+        // Sort rows based on date
+        rows.sort(function(a, b) {
+            var dateA = new Date(a.cells[0].textContent);
+            var dateB = new Date(b.cells[0].textContent);
+            
+            if (dateSortDirection === 'asc') {
+                return dateA - dateB;
+            } else {
+                return dateB - dateA;
+            }
+        });
+        
+        // Re-append rows in sorted order
+        var tbody = table.querySelector('tbody');
+        rows.forEach(function(row) {
+            tbody.appendChild(row);
+        });
+        
+        // Clear existing filters
+        if (dateSortDirection === 'asc') {
+            console.log("Sorted by date (oldest first)");
+        } else {
+            console.log("Sorted by date (newest first)");
+        }
+    }
+
+    function searchTable() {
+        // Get input value
+        var input = document.getElementById("searchInput");
+        var filter = input.value.toUpperCase();
+        
+        // Get table and rows
+        var table = document.getElementById("reportTable");
+        var rows = table.getElementsByTagName("tr");
+        
+        // Loop through rows and filter
+        for (var i = 1; i < rows.length; i++) {
+            if (rows[i].style.display === "none" && rows[i].getAttribute("data-filtered") === "true") {
+                continue; // Skip rows that are filtered out
+            }
+            
+            var show = false;
+            var cells = rows[i].getElementsByTagName("td");
+            
+            // Check each cell in the row
+            for (var j = 0; j < cells.length; j++) {
+                var cell = cells[j];
+                if (cell) {
+                    var text = cell.textContent || cell.innerText;
+                    if (text.toUpperCase().indexOf(filter) > -1) {
+                        show = true;
+                        break;
+                    }
+                }
+            }
+            
+            // Show or hide the row
+            rows[i].style.display = show ? "" : "none";
+        }
+    }
+    
+    function filterRecords(accessType) {
+        // Get all filter buttons and remove active class
+        var filterButtons = document.querySelectorAll('.filter-btn');
+        filterButtons.forEach(button => button.classList.remove('active'));
+        
+        // Add active class to the clicked button
+        if (accessType === 'all') {
+            document.getElementById('filterAll').classList.add('active');
+        } else if (accessType === 'Granted') {
+            document.getElementById('filterGranted').classList.add('active');
+        } else if (accessType === 'Denied') {
+            document.getElementById('filterDenied').classList.add('active');
+        }
+        
+        // Get all rows in the table
+        var rows = document.querySelectorAll('#reportTable .record-row');
+        
+        // Filter the rows
+        rows.forEach(row => {
+            if (accessType === 'all') {
+                row.style.display = '';
+                row.removeAttribute('data-filtered');
+            } else {
+                var rowAccess = row.getAttribute('data-access');
+                if (rowAccess === accessType) {
+                    row.style.display = '';
+                    row.removeAttribute('data-filtered');
+                } else {
+                    row.style.display = 'none';
+                    row.setAttribute('data-filtered', 'true');
+                }
+            }
+        });
+        
+        // Re-apply search filter
+        searchTable();
+    }
+    
+    // Functions for clear modal
+    function showClearModal() {
+        var modal = document.getElementById("clearModal");
+        modal.style.display = "block";
+    }
+    
+    function hideClearModal() {
+        var modal = document.getElementById("clearModal");
+        modal.style.display = "none";
+    }
+    
+    // Close the modal when clicking outside of it
+    window.onclick = function(event) {
+        var clearModal = document.getElementById("clearModal");
+        if (event.target == clearModal) {
+            hideClearModal();
+        }
+    }
+</script>
+{% endblock %}

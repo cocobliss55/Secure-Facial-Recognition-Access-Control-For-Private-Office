@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Facial Recognition Access Control{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="profile-container">
+                <div class="profile-icon" id="profileIcon">
+                    <!-- Display first letter of user ID -->
+                    {{ session.user_id[0].upper() }}
+                </div>
+                <div class="profile-dropdown" id="profileDropdown">
+                    <div class="admin-details">
+                        <div class="admin-name">
+                            {% if session.user_type == 'admin' %}
+                                Administrator
+                            {% else %}
+                                Guest User
+                            {% endif %}
+                        </div>
+                        <div class="admin-id">{{ session.user_id }}</div>
+                    </div>
+                    <ul class="dropdown-options">
+                        {% if session.user_type == 'admin' %}
+                        <li>
+                            <a href="{{ url_for('home') }}">
+                                <span class="icon">🏠</span>
+                                Dashboard
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" id="changePasswordBtn">
+                                <span class="icon">🔑</span>
+                                Change Password
+                            </a>
+                        </li>
+                        {% endif %}
+                        <li>
+                            <a href="{{ url_for('recognition') }}">
+                                <span class="icon">👤</span>
+                                Face Recognition
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ url_for('logout') }}" class="logout">
+                                <span class="icon">⬅️</span>
+                                Log Out
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="{{ url_for('home') }}" {% if request.path == url_for('home') %}class="active"{% endif %}>Home</a></li>
+                    <li><a href="{{ url_for('report') }}" {% if request.path == url_for('report') %}class="active"{% endif %}>Report</a></li>
+                    <li><a href="{{ url_for('employee') }}" {% if request.path == url_for('employee') %}class="active"{% endif %}>Employee</a></li>
+                </ul>
+            </nav>
+        </header>
+        
+        <main>
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for category, message in messages %}
+                            <div class="flash-message {{ category }}">
+                                {{ message }}
+                                <span class="close-flash" onclick="this.parentElement.style.display='none'">&times;</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+            
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- Change Password Modal -->
+    <div id="changePasswordModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="hideChangePasswordModal()">&times;</span>
+            <h3>Change Password</h3>
+            <form id="changePasswordForm" method="POST" action="{{ url_for('change_password') }}">
+                <div class="form-group">
+                    <label for="current_password">Current Password</label>
+                    <input type="password" id="current_password" name="current_password" required>
+                </div>
+                <div class="form-group">
+                    <label for="new_password">New Password</label>
+                    <input type="password" id="new_password" name="new_password" required>
+                </div>
+                <div class="form-group">
+                    <label for="confirm_password">Confirm New Password</label>
+                    <input type="password" id="confirm_password" name="confirm_password" required>
+                </div>
+                <div class="modal-buttons">
+                    <button type="submit" class="submit-btn">Change Password</button>
+                    <button type="button" class="cancel-btn" onclick="hideChangePasswordModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
